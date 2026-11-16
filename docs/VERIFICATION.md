@@ -4,7 +4,8 @@ Checked November 15, 2026, using Node 24 and the original source checkouts besid
 
 ## Executed
 
-- **43 automated tests passed**: input validation, original JSON import, original engine hashes, original INDEL and conversion parity, bounded worker concurrency/cancellation/error cleanup, sample downloads over HTTP, actual JSON/Excel/ZIP export contents, Firebase Authentication emulator integration, and local result storage/history.
+- **50 automated tests passed** with `RUN_AUTH_TESTS=1 npm test`: input validation, original JSON import, original engine hashes, original INDEL and conversion parity, bounded worker concurrency/cancellation/error cleanup, sample downloads over HTTP, actual JSON/Excel/ZIP export contents, Firebase Authentication emulator integration, local result storage/history, and analytics privacy controls.
+- **Analytics checks**: seven tests cover no collection before consent, sanitized page locations and event payloads, withdrawal and cookie cleanup, clearing account identity at logout, disabled preview tracking, rejecting unknown events/invalid values, and unavailable local storage. These validate the app's Google tag commands, not receipt by GA4.
 - **Local history checks**: eight IndexedDB repository tests, six React hook tests, and two workspace DOM integration tests cover default-off saving, exact JSON restoration, account isolation, atomic quota-failure rollback, keeping old results when disabled, manual saving/removal, import, and reopening a saved report URL. These use fake-indexeddb and JSDOM, not a live browser.
 - **Production TypeScript check and Vite build passed.** ExcelJS is a large, lazy-loaded export chunk; it is requested only when exporting Excel.
 - **Production dependency audit: 0 known vulnerabilities.** Firebase CLI development dependencies still have 14 moderate transitive audit advisories. They are not shipped in the static application; no downgrade or forced incompatible fix was applied.
@@ -23,7 +24,7 @@ Golden sample hashes are recorded in `scripts/verify-engine.mjs`. These tests ve
 ## Not yet executed
 
 - **Browser/visual QA**: the suite in `tests/browser/workflows.spec.ts` has not been run because automated browser access was unavailable in the development environment. It includes saved-history restoration after reload/login and desktop/mobile sticky reference bounds. Rendered appearance, scroll behavior, browser storage, download clicks, and browser worker integration still need verification in a browser.
-- **Production Firebase and hosting**: no Firebase/Cloudflare project configuration was supplied. No cloud resources were created, no live verification/reset emails were sent, and no deployment was made. The official local Firebase emulator was used to verify signup, wrong-password rejection, email verification, sign-in, password reset, and logout.
+- **Production verification is in progress**: Firebase project `eun-v3-uzihoon` is on Spark with billing disabled and Email/Password enabled. GA4 property `564411466` is linked, with Enhanced measurement off. Vercel project `eun-v3` is created in the Hobby workspace. The guarded build passed with the real public Firebase and GA4 configuration. Live deployment, email delivery, and GA4 event receipt are recorded below when observed. The official local Firebase emulator verifies signup, wrong-password rejection, email verification, sign-in, password reset, and logout.
 
 ## Compatibility notes
 

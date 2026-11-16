@@ -5,6 +5,7 @@ import { convertReports, readReports } from '../lib/science';
 import { exportZip } from '../lib/export';
 import type { Conversion } from '../lib/types';
 import { useAuth } from '../auth/AuthProvider';
+import { trackActivity } from '../lib/analytics';
 const options = [
   { id: 'reverseSeq' as const, title: 'Reverse sequence', description: 'Reverse the order of reference and treated sequences.', example: 'ACGT → TGCA', Icon: ArrowLeftRight },
   { id: 'reverseNucleo' as const, title: 'Complement nucleotides', description: 'Swap A ↔ T and C ↔ G. Called “Reverse nucleotide” in EUN.', example: 'ACGT → TGCA', Icon: RefreshCw },
@@ -21,6 +22,7 @@ export function ConvertPage() {
       if (!files.length || !steps.length) throw new Error('Choose reports and at least one conversion.');
       const reports = await readReports(files);
       await exportZip(convertReports(reports, steps)); setSuccess(true);
+      trackActivity('conversion_completed', { operation_count: steps.length }); trackActivity('report_exported', { format: 'zip' });
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
   return <><PageHeading section="File conversion" title="A new perspective on your data." description="Reverse, complement, or combine your existing EUN reports."/>

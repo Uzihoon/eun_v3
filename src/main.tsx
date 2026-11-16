@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { AuthPage } from './pages/AuthPage';
 import { Spinner } from './components/ui';
+import { AnalyticsConsent } from './components/AnalyticsConsent';
 import '@fontsource/dm-sans/latin-400.css';
 import '@fontsource/dm-sans/latin-500.css';
 import '@fontsource/dm-sans/latin-600.css';
@@ -24,4 +25,4 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
   static getDerivedStateFromError() { return { failed: true }; }
   render() { return this.state.failed ? <div className="empty-state"><h1>Something interrupted this page.</h1><p>Reload to try again. Unsaved results will be cleared.</p><button className="button primary" onClick={() => window.location.reload()}>Reload EUN</button></div> : this.props.children; }
 }
-createRoot(document.getElementById('root')!).render(<ErrorBoundary><AuthProvider><App/></AuthProvider></ErrorBoundary>);
+createRoot(document.getElementById('root')!).render(<ErrorBoundary><AuthProvider><App/><AnalyticsConsent/></AuthProvider></ErrorBoundary>);

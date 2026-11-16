@@ -36,9 +36,9 @@ Use **Download JSON** for a file backup, then **Import JSON** in Results history
 
 ## Free deployment, without AWS
 
-Use **Cloudflare Pages Free** for static hosting and **Firebase Authentication Spark** for accounts. Do not enable Blaze, phone/SMS auth, Firebase App Hosting, paid compute, or cloud file storage. The supplied `*.pages.dev` domain is free; a custom domain is optional and has its own registration cost. Free tiers have quotas and are not a promise of unlimited usage.
+Use **Vercel Hobby** for static hosting, **Firebase Authentication Spark** for accounts, and **Google Analytics 4** for optional activity analytics. Use the supplied `vercel.app` hostname. Keep billing upgrades, SMS sign-in, paid compute, cloud file storage, and Vercel Analytics disabled. Free plans have quotas; Vercel Hobby is intended for personal or noncommercial projects.
 
-See [deployment instructions](docs/DEPLOYMENT.md) for the exact account setup, environment variables, build command, free limits and verification checklist. Production cloud resources have not been created or deployed by this project.
+See [deployment instructions](docs/DEPLOYMENT.md) for the exact account setup, environment variables, build command, free limits and verification checklist. The production Firebase project is `eun-v3-uzihoon`. See the deployment guide for current setup and verification details.
 
 ## Verify
 

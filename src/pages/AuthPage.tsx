@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import { ArrowRight, ArrowLeft, Check, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { auth, authMessage, authReady, localAuth, requireAuth } from '../auth/firebase';
 import { useAuth } from '../auth/AuthProvider';
 import { Logo, Notice, Spinner } from '../components/ui';
+import { setAnalyticsUser, trackActivity, trackPage } from '../lib/analytics';
 export function AuthPage() {
   const { user, refresh, logout } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
+  useEffect(() => { trackPage(user && !user.verified ? '/verify' : `/${mode}`); }, [mode, user?.verified, user?.uid]);
   const [email, setEmail] = useState(''), [password, setPassword] = useState(''), [name, setName] = useState('');
   const [show, setShow] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(''), [info, setInfo] = useState('');
   const changeMode = (next: typeof mode) => { setMode(next); setError(''); setInfo(''); setPassword(''); };
@@ -18,13 +20,14 @@ export function AuthPage() {
       const client = requireAuth();
       if (mode === 'signup') {
         const result = await createUserWithEmailAndPassword(client, email.trim(), password);
+        setAnalyticsUser(result.user.uid); trackActivity('sign_up', { method: 'password' });
         await updateProfile(result.user, { displayName: name.trim() });
         await sendEmailVerification(result.user);
         await refresh();
       } else if (mode === 'reset') {
         await sendPasswordResetEmail(client, email.trim());
         setInfo('If an account exists for this email, you’ll receive a password reset link.');
-      } else { await signInWithEmailAndPassword(client, email.trim(), password); }
+      } else { const result = await signInWithEmailAndPassword(client, email.trim(), password); setAnalyticsUser(result.user.uid); trackActivity('login', { method: 'password' }); }
     } catch (e) { setError(authMessage(e)); } finally { setBusy(false); }
   };
   const verifyEmail = async () => {

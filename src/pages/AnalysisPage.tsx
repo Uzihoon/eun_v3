@@ -7,6 +7,7 @@ import { loadSampleFiles, runAnalysis } from '../lib/runner';
 import type { Progress } from '../lib/runner';
 import type { Report } from '../lib/types';
 import { useAuth } from '../auth/AuthProvider';
+import { trackActivity } from '../lib/analytics';
 export function AnalysisPage({ onReport }: { onReport: (report: Report, name: string) => void }) {
   const { verify } = useAuth();
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -25,24 +26,31 @@ export function AnalysisPage({ onReport }: { onReport: (report: Report, name: st
     if (busy) return;
     setError(''); setBusy(true); setProgress(null); setPhase(sample ? 'Loading sample reads…' : 'Preparing analysis…');
     const runController = new AbortController(); controller.current = runController;
+    const source = sample ? 'sample' : 'files';
+    const startedAt = performance.now();
+    let stage: 'authentication' | 'preparation' | 'processing' = 'authentication';
+    trackActivity('analysis_started', { source });
+    runController.signal.addEventListener('abort', () => trackActivity('analysis_cancelled', { source }), { once: true });
     try {
       await verify();
+      stage = 'preparation';
       const input = sample ? SAMPLE_FORM : form;
       const selected = sample ? await loadSampleFiles(runController.signal) : files;
       if (runController.signal.aborted) return;
       if (sample) { setForm({ ...SAMPLE_FORM }); setFiles(selected); }
       const prepared = prepareAnalysis(input, selected);
       setPhase('Analyzing paired reads');
+      stage = 'processing';
       const report = await runAnalysis(prepared, runController.signal, setProgress);
-      if (!runController.signal.aborted) onReport(report, sample ? 'EUN sample analysis' : `Analysis · ${new Date().toLocaleDateString()}`);
-    } catch (e) { if (!runController.signal.aborted) setError((e as Error).message); }
-    finally { if (!runController.signal.aborted) { setBusy(false); setProgress(null); } }
+      if (!runController.signal.aborted) { trackActivity('analysis_completed', { source, sample_count: Object.keys(report.value).length, duration_seconds: Math.round((performance.now() - startedAt) / 100) / 10 }); controller.current = null; onReport(report, sample ? 'EUN sample analysis' : `Analysis · ${new Date().toLocaleDateString()}`); }
+    } catch (e) { if (!runController.signal.aborted) { trackActivity('analysis_failed', { source, stage }); setError((e as Error).message); } }
+    finally { if (controller.current === runController) controller.current = null; if (!runController.signal.aborted) { setBusy(false); setProgress(null); } }
   };
   const submit = (e: FormEvent) => { e.preventDefault(); void run(false); };
   const importReport = async (file?: File) => {
     if (!file) return;
     setError('');
-    try { await verify(); onReport(parseReport(await file.text()), file.name.replace(/\.json$/i, '')); }
+    try { await verify(); const report = parseReport(await file.text()); trackActivity('report_imported', { source: 'analysis', report_count: 1 }); onReport(report, file.name.replace(/\.json$/i, '')); }
     catch (e) { setError((e as Error).message); }
   };
   return <>

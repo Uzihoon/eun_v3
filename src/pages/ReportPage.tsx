@@ -5,6 +5,7 @@ import { percent, sampleIds } from '../lib/science';
 import { exportExcel, exportJson } from '../lib/export';
 import { Notice, PageHeading, Spinner } from '../components/ui';
 import { useAuth } from '../auth/AuthProvider';
+import { trackActivity } from '../lib/analytics';
 const num = (n: number) => (n ?? 0).toLocaleString();
 export function ReportPage({ report, name, saved, saving, onSave, onIndel }: { report: Report; name: string; saved: boolean; saving: boolean; onSave: () => Promise<boolean>; onIndel: (reports: NamedReport[]) => void }) {
   const { verify } = useAuth();
@@ -15,7 +16,7 @@ export function ReportPage({ report, name, saved, saving, onSave, onIndel }: { r
   const total = Object.values(report.value).reduce((sum, item) => sum + item.tot_count, 0);
   const exportFile = async (kind: 'json' | 'excel') => {
     setBusy(true); setError('');
-    try { await verify(); if (kind === 'json') exportJson(report); else await exportExcel(report); }
+    try { await verify(); if (kind === 'json') exportJson(report); else await exportExcel(report); trackActivity('report_exported', { format: kind }); }
     catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
   return <><PageHeading section="Analysis / Results" title="Your results, in focus." description={name} actions={<><button className="button secondary" disabled={busy} onClick={() => void exportFile('json')}><FileJson size={16}/> Download JSON</button><button className="button primary" disabled={busy} onClick={() => void exportFile('excel')}>{busy ? <Spinner/> : <FileSpreadsheet size={16}/>} Export Excel</button></>}/>

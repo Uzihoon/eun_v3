@@ -6,6 +6,7 @@ import { Dropzone, Notice, PageHeading, Spinner } from '../components/ui';
 import { buildIndel, readReports } from '../lib/science';
 import type { IndelData, NamedReport } from '../lib/types';
 import { useAuth } from '../auth/AuthProvider';
+import { trackActivity } from '../lib/analytics';
 Chart.register(...registerables, annotationPlugin);
 const colors = ['#1c7971', '#dc8c56', '#577db5', '#9c6c9d', '#8c9952', '#c45b6b'];
 export function IndelPage({ reports, onReports }: { reports: NamedReport[] | null; onReports: (r: NamedReport[] | null) => void }) {
@@ -13,7 +14,7 @@ export function IndelPage({ reports, onReports }: { reports: NamedReport[] | nul
   const [files, setFiles] = useState<File[]>([]), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const run = async () => {
     setError(''); setBusy(true);
-    try { await verify(); if (!files.length) throw new Error('Choose at least one JSON report.'); onReports(await readReports(files)); }
+    try { await verify(); if (!files.length) throw new Error('Choose at least one JSON report.'); const imported = await readReports(files); onReports(imported); trackActivity('report_imported', { source: 'indel', report_count: imported.length }); }
     catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
   return <><PageHeading section="INDEL reports" title={reports ? 'See where change happens.' : 'Put your edits in context.'} description="Compare insertion and deletion frequencies across your EUN reports." actions={reports ? <button className="button secondary" onClick={() => onReports(null)}>Compare other reports</button> : undefined}/>
@@ -58,7 +59,7 @@ function IndelChart({ data }: { data: IndelData }) {
   }, [range]);
   const downloadPng = () => {
     if (!chart.current) return;
-    const link = document.createElement('a'); link.download = '[EUN]INDEL_Chart.png'; link.href = chart.current.toBase64Image(); link.click();
+    const link = document.createElement('a'); link.download = '[EUN]INDEL_Chart.png'; link.href = chart.current.toBase64Image(); link.click(); trackActivity('report_exported', { format: 'png' });
   };
   return <><section className="panel chart-panel"><div className="panel-heading"><div><h2>INDEL frequency</h2><p>Equal-weight average across samples in each report</p></div><button className="button secondary" onClick={downloadPng}><ImageDown size={16}/> Download PNG</button></div><div className="chart-container"><canvas ref={canvas} role="img" aria-label={`INDEL frequency chart comparing ${data.result.map(r => r.label).join(', ')}`}/></div><div className="chart-range"><span>Zoom to position</span><label>From<input type="number" min={1} max={Math.max(1, range.end - 1)} value={range.start} onChange={e => setRange(r => ({ ...r, start: Math.max(1, Math.min(+e.target.value, r.end - 1)) }))}/></label><label>To<input type="number" min={range.start + 1} max={data.seq.length} value={range.end} onChange={e => setRange(r => ({ ...r, end: Math.max(r.start + 1, Math.min(data.seq.length, +e.target.value)) }))}/></label><button className="text-button" onClick={() => setRange({ start: 1, end: data.seq.length })}><RotateCcw size={14}/> Reset zoom</button></div></section>
     <section className="panel"><button className="disclosure" aria-expanded={showSequences} onClick={() => setShowSequences(!showSequences)}><span>Reference sequences <small>{data.result.length} reports</small></span><span>{showSequences ? '−' : '+'}</span></button>{showSequences && <div className="indel-sequences">{data.result.map((r, i) => {

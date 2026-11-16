@@ -5,6 +5,7 @@ import { Notice, PageHeading } from '../components/ui';
 import { exportJson } from '../lib/export';
 import { parseReport } from '../lib/science';
 import type { Report, SessionReport } from '../lib/types';
+import { trackActivity } from '../lib/analytics';
 
 export function HistoryPage({ reports, savedIds, autoSave, busy, onOpen, onReport, onSave, onRemove }: {
   reports: SessionReport[]; savedIds: Set<string>; autoSave: boolean; busy: boolean;
@@ -21,13 +22,13 @@ export function HistoryPage({ reports, savedIds, autoSave, busy, onOpen, onRepor
   const importReport = async (file?: File) => {
     if (!file) return;
     setError(''); setImporting(true);
-    try { await verify(); onReport(parseReport(await file.text()), file.name.replace(/\.json$/i, '')); }
+    try { await verify(); const report = parseReport(await file.text()); trackActivity('report_imported', { source: 'history', report_count: 1 }); onReport(report, file.name.replace(/\.json$/i, '')); }
     catch (cause) { setError((cause as Error).message); }
     finally { setImporting(false); }
   };
   const download = async (report: SessionReport) => {
     setError('');
-    try { await verify(); exportJson(report); } catch (cause) { setError((cause as Error).message); }
+    try { await verify(); exportJson(report); trackActivity('report_exported', { format: 'json' }); } catch (cause) { setError((cause as Error).message); }
   };
   return <>
     <PageHeading section="Results history" title="Pick up where you left off." description="Reopen a saved analysis or bring a JSON report back into your workspace." actions={<><button className="button secondary" disabled={busy || importing} onClick={() => input.current?.click()}><FileJson size={16}/> Import JSON</button><input ref={input} type="file" className="sr-only" tabIndex={-1} accept=".json" aria-label="Import JSON report" onChange={event => { void importReport(event.target.files?.[0]); event.target.value = ''; }}/><a className="button primary" href="#/analysis">New analysis <ArrowRight size={16}/></a></>}/>

@@ -1,10 +1,11 @@
-import { lazy, Suspense, useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react';
 import { ArrowRight, BookOpen, Dna, FileClock, HardDrive, LineChart, LogOut, Menu, RefreshCw, Settings, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { localAuth } from '../auth/firebase';
 import { Logo, Notice, PageHeading, Spinner } from './ui';
 import type { NamedReport, Report } from '../lib/types';
 import { useReports } from '../hooks/useReports';
+import { setAnalyticsUser, trackPage } from '../lib/analytics';
 const AnalysisPage = lazy(() => import('../pages/AnalysisPage').then(m => ({ default: m.AnalysisPage })));
 const ReportPage = lazy(() => import('../pages/ReportPage').then(m => ({ default: m.ReportPage })));
 const ConvertPage = lazy(() => import('../pages/ConvertPage').then(m => ({ default: m.ConvertPage })));
@@ -21,6 +22,7 @@ const navigation = [
 export default function Workspace() {
   const { user, logout, verify } = useAuth();
   const path = useSyncExternalStore(subscribe, () => window.location.hash.replace(/^#/, '') || '/analysis');
+  useEffect(() => { setAnalyticsUser(user!.uid); trackPage(path); }, [path, user?.uid]);
   const archive = useReports(user!.uid, verify);
   const { reports } = archive;
   const [indel, setIndel] = useState<NamedReport[] | null>(null);

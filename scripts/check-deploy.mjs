@@ -7,3 +7,7 @@ if (missing.length || env.VITE_FIREBASE_PROJECT_ID?.startsWith('demo-')) {
   process.exit(1);
 }
 console.log('Production Firebase configuration is present. Building with emulator access disabled.');
+if (!/^G-[A-Z0-9]+$/.test(env.VITE_GA4_MEASUREMENT_ID?.trim() ?? '')) {
+  console.error('Set VITE_GA4_MEASUREMENT_ID to the production GA4 web stream ID before deploying.');
+  process.exit(1);
+}

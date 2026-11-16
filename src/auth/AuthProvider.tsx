@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { onAuthStateChanged, reload, signOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { auth, authReady, requireAuth } from './firebase';
+import { setAnalyticsUser, trackActivity } from '../lib/analytics';
 interface Identity { uid: string; email: string; name: string; verified: boolean }
 interface AuthState { user: Identity | null; loading: boolean; refresh: () => Promise<boolean>; verify: () => Promise<void>; logout: () => Promise<void> }
 const AuthContext = createContext<AuthState | null>(null);
@@ -10,6 +11,7 @@ const identity = (user: User): Identity => ({ uid: user.uid, email: user.email ?
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Identity | null>(null);
   const [loading, setLoading] = useState(!!auth);
+  useEffect(() => { setAnalyticsUser(user?.uid ?? null); }, [user?.uid]);
   const refresh = useCallback(async () => {
     const current = auth?.currentUser;
     if (!current) { setUser(null); return false; }
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { live = false; unsubscribe(); window.removeEventListener('focus', focus); clearInterval(timer); };
   }, [refresh]);
   const verify = useCallback(async () => { if (!(await refresh())) throw new Error('Please sign in with a verified account to continue.'); }, [refresh]);
-  const logout = useCallback(async () => { await signOut(requireAuth()); setUser(null); }, []);
+  const logout = useCallback(async () => { await signOut(requireAuth()); trackActivity('logout', {}); setAnalyticsUser(null); setUser(null); }, []);
   return <AuthContext.Provider value={{ user, loading, refresh, verify, logout }}>{children}</AuthContext.Provider>;
 }
 export function useAuth() { const context = useContext(AuthContext); if (!context) throw new Error('Missing auth provider'); return context; }

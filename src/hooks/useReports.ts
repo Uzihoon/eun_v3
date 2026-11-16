@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReportStore, reportStore, storageError } from '../lib/report-store';
 import type { Report, SessionReport } from '../lib/types';
+import { trackActivity } from '../lib/analytics';
 
 export function useReports(ownerId: string, verify: () => Promise<void>, store: ReportStore = reportStore) {
   const [reports, setReports] = useState<SessionReport[]>([]);
@@ -50,7 +51,7 @@ export function useReports(ownerId: string, verify: () => Promise<void>, store: 
     if (autoSaveRef.current || pending.current) void mutate(async current => {
       const saved = await store.save(ownerId, report, true);
       if (current()) {
-        if (saved) updateSaved(new Set([...savedRef.current, report.id]));
+        if (saved) { updateSaved(new Set([...savedRef.current, report.id])); trackActivity('result_saved', { method: 'automatic' }); }
         else { autoSaveRef.current = false; setAutoSaveState(false); }
       }
     });
@@ -62,6 +63,7 @@ export function useReports(ownerId: string, verify: () => Promise<void>, store: 
     await store.setAutoSave(ownerId, enabled, existing);
     if (current()) {
       autoSaveRef.current = enabled; setAutoSaveState(enabled);
+      trackActivity('storage_preference_changed', { enabled });
       if (enabled) updateSaved(new Set([...savedRef.current, ...existing.map(report => report.id)]));
     }
   }), [mutate, ownerId, store, updateSaved]);
@@ -70,7 +72,7 @@ export function useReports(ownerId: string, verify: () => Promise<void>, store: 
     const report = reportsRef.current.find(item => item.id === id);
     if (!report) return;
     await store.save(ownerId, report);
-    if (current()) updateSaved(new Set([...savedRef.current, id]));
+    if (current()) { updateSaved(new Set([...savedRef.current, id])); trackActivity('result_saved', { method: 'manual' }); }
   }), [mutate, ownerId, store, updateSaved]);
 
   const removeReport = useCallback((id: string) => mutate(async current => {

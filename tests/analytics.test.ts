@@ -52,6 +52,23 @@ it('stops events immediately on withdrawal and clears analytics cookies', async 
   expect(document.cookie).not.toContain('_ga');
 });
 
+it('sets privacy and page defaults before Google tag initialization can emit automatic events', async () => {
+  const analytics = await import('../src/lib/analytics');
+  analytics.trackPage('/report/private-experiment?email=private@example.test');
+  analytics.setAnalyticsConsent('granted');
+  const queue = commands();
+  const startup = queue.findIndex(command => command[0] === 'js');
+  const initialDefaults = Object.assign({}, ...queue.slice(0, startup).filter(command => command[0] === 'set').map(command => command[1]));
+  expect(initialDefaults).toMatchObject({
+    send_page_view: false,
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+    page_location: 'https://eun-v3.vercel.app/#/report',
+    page_title: 'EUN · Results',
+    page_referrer: '',
+  });
+});
+
 it('clears the signed-in ID before subsequent signed-out events', async () => {
   const analytics = await import('../src/lib/analytics');
   analytics.setAnalyticsUser('account-a');

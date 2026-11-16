@@ -58,9 +58,11 @@ function initialize() {
     browser.gtag = function () { browser.dataLayer!.push(arguments); };
     command('consent', 'default', { ...deniedAds, analytics_storage: 'denied' });
     command('consent', 'update', { ...deniedAds, analytics_storage: 'granted' });
+    const settings = { send_page_view: false, allow_google_signals: false, allow_ad_personalization_signals: false, cookie_domain: location.hostname, cookie_flags: 'SameSite=Lax;Secure' };
+    // Migrated Google tags may initialize on `js`, before a stream config.
+    command('set', { ...settings, ...pageContext() });
     command('js', new Date());
-    command('set', pageContext());
-    command('config', measurementId, { send_page_view: false, allow_google_signals: false, allow_ad_personalization_signals: false, cookie_domain: location.hostname, cookie_flags: 'SameSite=Lax;Secure' });
+    command('config', measurementId, settings);
     const script = document.createElement('script');
     script.async = true; script.dataset.eunAnalytics = 'true';
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;

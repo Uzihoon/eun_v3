@@ -4,12 +4,14 @@ Use Vercel **Hobby**, Firebase **Spark**, and standard **Google Analytics 4**. D
 
 ## Production accounts
 
+- Live app: [eun-v3.vercel.app](https://eun-v3.vercel.app/).
 - Firebase project: `eun-v3-uzihoon`, display name **EUN V3**.
 - Firebase Web app: **EUN V3 Web**.
 - Source: [Uzihoon/eun_v3](https://github.com/Uzihoon/eun_v3), production branch `codex/eun-v3`.
 - Vercel: [eun-v3](https://vercel.com/uzihoon/eun-v3), project `prj_qL2ysUH1ZGIVp0quzk2WdGOFxLao`, in the `uzihoon` Hobby workspace.
 - GA4: property `564411466`, Web stream `16349169498`, measurement ID `G-KGHMZ1XTLY`, linked to Firebase under **Default Account for Firebase**.
 - [Firebase accounts](https://console.firebase.google.com/project/eun-v3-uzihoon/authentication/users) · [GA4 administration](https://analytics.google.com/analytics/web/#/a164059888p564411466/admin).
+- [GA4 Realtime](https://analytics.google.com/analytics/web/#/a164059888p564411466/realtime/overview) · [Usage dashboard](https://analytics.google.com/analytics/web/#/a164059888p564411466/reports/reportinghub).
 
 ## Firebase Authentication
 
@@ -24,8 +26,11 @@ Use Vercel **Hobby**, Firebase **Spark**, and standard **Google Analytics 4**. D
 Link a standard GA4 property to the Firebase project and create a Web data stream for the production URL. Copy its `G-…` measurement ID into the Vercel production environment.
 
 - Disable **Enhanced measurement** for the Web stream. EUN sends its own sanitized page views and events; automatic form, link, download, and history collection could capture file names or report identifiers.
+- Under **Configure tag settings**, the upgraded Google tag is managed by Tag Manager container `GTM-PVZN9WPK`. Its published configuration also disables all six automatic event-detection options and user-provided data capabilities. These settings are separate from the stream's Enhanced measurement switch.
+- The GA4 destination uses the **EUN - honor on-page analytics config** Initialization trigger, with **Support gtag('config') initialization events** and **Listen for this container's IDs** enabled. Keep this compatibility setting: EUN loads `/gtag/js` and supplies `send_page_view: false` and privacy settings on the page. The default Initialization trigger was sending an extra page view before those settings applied. See [Google's initialization compatibility guidance](https://support.google.com/analytics/answer/18411054?hl=en). Container version 3 contains this correction.
 - Leave Google Signals, advertising features, and optional data sharing off. Do not link advertising products or BigQuery.
 - Use the user's reporting timezone, `America/Vancouver`.
+- The deployed property is named **EUN V3**, uses the **User behavior** reports snapshot, and disallows ads personalization in all regions. Google Signals and user-provided data collection are off.
 - The app loads the Google tag only after the user chooses **Allow analytics**. Declining still permits all EUN features. Preferences can be changed from **Privacy & analytics** or **Settings → Usage analytics**.
 - Signed-in events use the Firebase UID, not an email or name. EUN sends category-only page locations, without report IDs or query strings. It excludes sequencing files, reference sequences, report names, scientific results, and raw error messages.
 - The analytics cookie is limited to the deployment hostname. Withdrawal disables collection and removes those cookies. It does not erase events already collected.
@@ -82,4 +87,4 @@ Vercel's `VERCEL_ENV` determines whether analytics can run. The build fails if a
 
 ## Release verification
 
-Check the deployment is Ready and its public URL serves the correct build. Verify production Firebase config, authorized domains, email/password login, and the absence of emulator endpoints. Test the sample, JSON round-trip, exports, local history, and consent controls. Confirm safe events appear in GA4 Realtime after consent, and no Google tag loads before consent. Record observed results in `VERIFICATION.md`; distinguish HTTP/unit checks from real-browser checks.
+Check the deployment is Ready and its public URL serves the correct build. Verify production Firebase config, authorized domains, email/password login, and the absence of emulator endpoints. Test the sample, JSON round-trip, exports, local history, and consent controls. Confirm safe events appear in GA4 Realtime after consent, and no Google tag loads before consent. After changing Google tag settings, also check a report reload produces only the sanitized `/#/report` location and no automatic duplicate page view. Record observed results in `VERIFICATION.md`; distinguish HTTP/unit checks from real-browser checks.

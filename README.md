@@ -1,5 +1,7 @@
 # EUN V3
 
+[Open EUN V3](https://eun-v3.vercel.app/) · [Deployment setup](docs/DEPLOYMENT.md)
+
 A redesigned CRISPR/Cas analysis workspace based on the original [EUN](https://github.com/Uzihoon/eun). It preserves the original sequencing engine and JSON report structure. EUN-V2 was reviewed as historical context, not used as the design template.
 
 ## Run locally

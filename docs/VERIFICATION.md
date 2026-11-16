@@ -4,8 +4,8 @@ Checked November 15, 2026, using Node 24 and the original source checkouts besid
 
 ## Executed
 
-- **50 automated tests passed** with `RUN_AUTH_TESTS=1 npm test`: input validation, original JSON import, original engine hashes, original INDEL and conversion parity, bounded worker concurrency/cancellation/error cleanup, sample downloads over HTTP, actual JSON/Excel/ZIP export contents, Firebase Authentication emulator integration, local result storage/history, and analytics privacy controls.
-- **Analytics checks**: seven tests cover no collection before consent, sanitized page locations and event payloads, withdrawal and cookie cleanup, clearing account identity at logout, disabled preview tracking, rejecting unknown events/invalid values, and unavailable local storage. These validate the app's Google tag commands, not receipt by GA4.
+- **51 automated tests passed** with `RUN_AUTH_TESTS=1 npm test`: input validation, original JSON import, original engine hashes, original INDEL and conversion parity, bounded worker concurrency/cancellation/error cleanup, sample downloads over HTTP, actual JSON/Excel/ZIP export contents, Firebase Authentication emulator integration, local result storage/history, and analytics privacy controls.
+- **Analytics checks**: eight tests cover no collection before consent, sanitized page locations and event payloads, privacy defaults applied before tag initialization, withdrawal and cookie cleanup, clearing account identity at logout, disabled preview tracking, rejecting unknown events/invalid values, and unavailable local storage. These validate the app's Google tag commands; GA4 receipt was checked separately below.
 - **Local history checks**: eight IndexedDB repository tests, six React hook tests, and two workspace DOM integration tests cover default-off saving, exact JSON restoration, account isolation, atomic quota-failure rollback, keeping old results when disabled, manual saving/removal, import, and reopening a saved report URL. These use fake-indexeddb and JSDOM, not a live browser.
 - **Production TypeScript check and Vite build passed.** ExcelJS is a large, lazy-loaded export chunk; it is requested only when exporting Excel.
 - **Production dependency audit: 0 known vulnerabilities.** Firebase CLI development dependencies still have 14 moderate transitive audit advisories. They are not shipped in the static application; no downgrade or forced incompatible fix was applied.
@@ -21,10 +21,23 @@ Checked November 15, 2026, using Node 24 and the original source checkouts besid
 
 Golden sample hashes are recorded in `scripts/verify-engine.mjs`. These tests verify preservation of the legacy calculations; they do not independently validate the scientific method.
 
+## Live production verification
+
+- [eun-v3.vercel.app](https://eun-v3.vercel.app/) is publicly available on Vercel. Deployment `dpl_FEegSKcAzy9xXxTd8V6Dug9NvNZW` reached **Ready**, serving application commit `8663fe972cb30b3f601165395de5b00d506c8f0d`. The Git connection points to `Uzihoon/eun_v3`, and production branch tracking is set to `codex/eun-v3`.
+- Vercel's workspace shows **Hobby**. Firebase project `eun-v3-uzihoon` shows **Spark**, with the billing API confirming billing disabled and no billing account attached. Email/Password is enabled, and `eun-v3.vercel.app` is an authorized domain. No paid services or Vercel Analytics were enabled.
+- The public app and all four sample FASTQ.GZ files returned HTTP 200. Each downloaded sample decompresses to the same SHA-256 as its original file. The deployed bundle contains the expected Firebase/GA4 public configuration and no local auth-emulator endpoint. Security headers were checked.
+- The owner created a real production account and verified the email without sharing a password. The authenticated workspace was observed, and the session survived reloads.
+- In Chrome, **Run sample** completed both samples with the counts shown above. Saving a report displayed **Saved on this device**; both saved reports remained in Results history after reload, and the new report reopened correctly from its saved URL.
+- **Download JSON** produced a valid report containing both samples and the expected counts. **Export Excel** produced a valid XLSX download. Automated tests separately verify export contents and JSON import/restoration.
+- The reference amplicon remained sticky while scrolling: 12 px from the top on desktop and 8 px on a 390 px mobile viewport. The mobile report had no horizontal page overflow. The viewport was restored after testing.
+- No Google tag loaded before analytics consent. After opting out and reloading, no Google tag loaded and the Settings switch remained off. Restoring consent loaded analytics again; automatic result saving was left off.
+- GA4 Realtime received page views, analysis start/completion, saved-result, and export events. Report page locations were `https://eun-v3.vercel.app/#/report`, without report IDs. Existing setup-only automatic page views exposed a migrated Google tag initialization issue; published container version 3 now waits for EUN's on-page configuration. A subsequent report reload increased the sanitized Results count without increasing the old automatic-page-view count. All displayed page locations were reviewed; none contained report IDs or scientific data.
+
 ## Not yet executed
 
-- **Browser/visual QA**: the suite in `tests/browser/workflows.spec.ts` has not been run because automated browser access was unavailable in the development environment. It includes saved-history restoration after reload/login and desktop/mobile sticky reference bounds. Rendered appearance, scroll behavior, browser storage, download clicks, and browser worker integration still need verification in a browser.
-- **Production verification is in progress**: Firebase project `eun-v3-uzihoon` is on Spark with billing disabled and Email/Password enabled. GA4 property `564411466` is linked, with Enhanced measurement off. Vercel project `eun-v3` is created in the Hobby workspace. The guarded build passed with the real public Firebase and GA4 configuration. Live deployment, email delivery, and GA4 event receipt are recorded below when observed. The official local Firebase emulator verifies signup, wrong-password rejection, email verification, sign-in, password reset, and logout.
+- The full automated browser suite in `tests/browser/workflows.spec.ts` has not been run. The manual production Chrome checks above cover the core signup, sample, storage, download, consent, and sticky-reference flows, but do not replace the entire suite.
+- Production password-reset email delivery was not tested. The official Firebase emulator integration tests cover signup, wrong-password rejection, email verification, sign-in, password reset, and logout.
+- Standard GA4 reports were not awaited; receipt was verified in Realtime. Consent refusal, blockers, and network failures can make usage counts incomplete.
 
 ## Compatibility notes
 
